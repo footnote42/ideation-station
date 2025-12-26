@@ -11,7 +11,10 @@
       "Bash(/c/dev/flutter/bin/flutter:*)",
       "Bash(export PATH=\"/c/dev/flutter/bin/flutter/bin:$PATH\")",
       "Bash(flutter:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls:*)"
     ]
   }
 }

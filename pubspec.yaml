@@ -49,7 +49,7 @@ dependencies:
 
   # Code generation annotations
   freezed_annotation: ^2.4.0
-  json_annotation: ^4.8.0
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
