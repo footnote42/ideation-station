@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Ideation Station** is a mobile-first mind mapping application for creative thinking based on Tony Buzan's methodology. The app prioritizes rapid idea capture, visual expressiveness, and cognitive flow over project management or task tracking.
 
-**Current Technology Stack**: Flutter (native iOS/Android)
+**Current Technology Stack**: Flutter 3.38.5 (Dart 3.10.4) - native iOS/Android
 **Storage**: Local device storage only (MVP)
-**Current Status**: Pre-implementation - specification phase complete
+**Current Status**: Phase 2 Complete - Foundation ready for User Story implementation
 
 ## Core Philosophy (Mind Mapping Methodology)
 
@@ -266,9 +266,68 @@ git checkout ###-feature-name
 - **Task execution order**: See `specs/###-feature-name/tasks.md`
 - **Developer setup and TDD workflow**: See `specs/###-feature-name/quickstart.md`
 
+## Implementation Status
+
+### ✅ Phase 1: Setup (Complete)
+**Tasks T001-T007** | **Commit**: `d503ec1`
+
+- Flutter 3.38.5 project initialized
+- Dependencies configured: flutter_riverpod ^2.5.0, path_provider ^2.1.0, uuid ^4.3.0, flex_color_picker ^3.4.0, freezed_annotation ^2.4.0, json_annotation ^4.9.0
+- Dev dependencies: build_runner ^2.4.0, freezed ^2.4.0, json_serializable ^6.7.0, mockito ^5.4.0, flutter_lints ^6.0.0
+- Strict analyzer options configured
+- Test directory structure created (widget/, integration/, unit/, performance/)
+- Flutter environment verified
+
+### ✅ Phase 2: Foundational (Complete)
+**Tasks T008-T020** | **Commit**: `48c9055`
+
+**Core Models** (with freezed + JSON serialization):
+- `lib/models/position.dart` - Canvas coordinates (center = 0,0)
+- `lib/models/node_type.dart` - CENTRAL, BRANCH, SUB_BRANCH enum
+- `lib/models/node_symbol.dart` - 8 symbol types (star, lightbulb, question, check, warning, heart, arrows) with positioning
+- `lib/models/node.dart` - Complete node model (id, text, type, position, color, symbols, parent/child IDs)
+- `lib/models/cross_link.dart` - Associative connections between non-adjacent nodes
+- `lib/models/mind_map.dart` - Top-level container (id, name, timestamps, central node, all nodes, cross-links)
+
+**Infrastructure**:
+- `lib/utils/color_converter.dart` - JSON serialization for Flutter Color (using toARGB32())
+- `lib/utils/offset_converter.dart` - JSON serialization for Flutter Offset
+- `lib/utils/constants.dart` - App-wide constants:
+  - 12-color palette for branch differentiation
+  - Performance budgets: 60fps (16ms), <100ms touch, <2s cold start, <500ms auto-save
+  - Canvas constraints: 0.5x-2.0x zoom, infinite boundaries
+  - Buzan visual hierarchy: main branches (8px) > sub-branches (5px) > deep sub-branches (3px)
+  - Layout parameters: 150px central radius, 30° radial step, 80px min spacing
+- `lib/main.dart` - Riverpod ProviderScope setup wrapping MaterialApp
+
+**Quality**: All tests passing, Flutter analyze clean
+
+### 🎯 Next Phase: Phase 3 - User Story 1 (Rapid Idea Capture)
+**Tasks T021-T038** | **Status**: Ready to begin
+
+**Implementation Order (TDD - Red-Green-Refactor)**:
+1. Write unit tests FIRST (T021-T023) - tests MUST FAIL
+2. Write widget tests FIRST (T024-T025) - tests MUST FAIL
+3. Implement models/services (T026-T028)
+4. Implement UI painters/widgets (T029-T031)
+5. Implement interaction logic (T032-T035)
+6. Run integration tests (T036)
+7. Run performance tests (T037-T038)
+
+**User Story 1 Goal**: Enable users to create a central node and add branch/sub-branch nodes radiating outward with <100ms touch response
+
+**Independent Test Criteria**: User can open app, create central node with keyword, add 5-10 branch nodes in under 30 seconds with radial auto-positioning
+
+To start Phase 3, run: `execute phase 3: user story 1 - rapid idea capture`
+
 ## Active Technologies
-- Dart 3.2+ with Flutter 3.16+ SDK (001-mind-map-mvp)
-- Local JSON files via path_provider (mobile filesystem) (001-mind-map-mvp)
+- Flutter 3.38.5 / Dart 3.10.4
+- flutter_riverpod 2.6.1 (state management)
+- freezed 2.5.8 + json_serializable 6.9.5 (code generation)
+- path_provider 2.1.5 (local storage)
+- Local JSON files via path_provider (mobile filesystem)
 
 ## Recent Changes
-- 001-mind-map-mvp: Added Dart 3.2+ with Flutter 3.16+ SDK
+- 2025-12-26: Phase 2 complete - foundational models and infrastructure
+- 2025-12-26: Phase 1 complete - Flutter project setup
+- 2025-12-26: golden_toolkit removed (discontinued), using Flutter's built-in matchesGoldenFile()
