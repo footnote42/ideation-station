@@ -31,6 +31,20 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
       TransformationController();
 
   @override
+  void initState() {
+    super.initState();
+    // Center the viewport on the canvas center (where nodes are positioned)
+    // The canvas is 20000x20000, centered at (10000, 10000)
+    // We need to translate the view to show this center point
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final screenSize = MediaQuery.of(context).size;
+      final dx = screenSize.width / 2 - AppConstants.canvasBoundaryMargin;
+      final dy = screenSize.height / 2 - AppConstants.canvasBoundaryMargin;
+      _transformationController.value = Matrix4.identity()..translate(dx, dy);
+    });
+  }
+
+  @override
   void dispose() {
     _transformationController.dispose();
     super.dispose();

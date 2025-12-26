@@ -137,25 +137,22 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
 
     if (result == true && mounted) {
-      // Capture values before disposing
+      // Capture values
       final mapName = nameController.text.isNotEmpty
           ? nameController.text
           : 'My Mind Map';
       final centralText = centralTextController.text;
 
-      // Dispose controllers immediately - dialog is already closed
-      nameController.dispose();
-      centralTextController.dispose();
-
-      // Create mind map - dialog has already closed
-      ref.read(mindMapProvider.notifier).createMindMap(
-            name: mapName,
-            centralText: centralText,
-          );
-    } else {
-      // If cancelled, still dispose controllers
-      nameController.dispose();
-      centralTextController.dispose();
+      // Defer state change until dialog animation completes
+      // Controllers will be garbage collected automatically (they're local variables)
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (mounted) {
+          ref.read(mindMapProvider.notifier).createMindMap(
+                name: mapName,
+                centralText: centralText,
+              );
+        }
+      });
     }
   }
 
