@@ -136,26 +136,24 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ),
     );
 
-    if (result == true && mounted) {
-      // Capture values before disposing controllers
-      final mapName = nameController.text.isNotEmpty
-          ? nameController.text
-          : 'My Mind Map';
-      final centralText = centralTextController.text;
+    // Capture values before disposing
+    final mapName = nameController.text.isNotEmpty
+        ? nameController.text
+        : 'My Mind Map';
+    final centralText = centralTextController.text;
 
-      // Dispose controllers before state update
+    // Dispose controllers after current frame completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       nameController.dispose();
       centralTextController.dispose();
+    });
 
+    if (result == true && mounted) {
       // Create mind map after dialog is fully closed
       ref.read(mindMapProvider.notifier).createMindMap(
             name: mapName,
             centralText: centralText,
           );
-    } else {
-      // Dispose controllers if dialog was cancelled
-      nameController.dispose();
-      centralTextController.dispose();
     }
   }
 
