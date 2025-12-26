@@ -4,7 +4,14 @@
       "Bash(git fetch:*)",
       "Bash(bash .specify/scripts/bash/create-new-feature.sh:*)",
       "Bash(cat:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(flutter create:*)",
+      "Bash(echo:*)",
+      "Bash(where:*)",
+      "Bash(/c/dev/flutter/bin/flutter:*)",
+      "Bash(export PATH=\"/c/dev/flutter/bin/flutter/bin:$PATH\")",
+      "Bash(flutter:*)",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -1,0 +1,5 @@
+package com.ideationstation.ideation_station
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
