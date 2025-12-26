@@ -74,14 +74,18 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
                 final canvasY = AppConstants.canvasBoundaryMargin + node.position.y;
 
                 return Positioned(
-                  left: canvasX - 60, // Center the node widget
-                  top: canvasY - 30,
+                  left: canvasX - 75, // Center the node widget
+                  top: canvasY - 40,
                   child: RepaintBoundary(
-                    child: NodeWidget(
-                      node: node,
-                      onTap: widget.onNodeTap != null
-                          ? () => widget.onNodeTap!(node.id)
-                          : null,
+                    child: SizedBox(
+                      width: 150,
+                      height: 80,
+                      child: NodeWidget(
+                        node: node,
+                        onTap: widget.onNodeTap != null
+                            ? () => widget.onNodeTap!(node.id)
+                            : null,
+                      ),
                     ),
                   ),
                 );

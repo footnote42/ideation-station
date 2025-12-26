@@ -94,14 +94,19 @@ class ConnectionPainter extends CustomPainter {
     // Calculate perpendicular offset for curve depth
     final dx = end.dx - start.dx;
     final dy = end.dy - start.dy;
-    final distance = (dx * dx + dy * dy).abs();
+
+    // Calculate actual distance using sqrt
+    final distanceSquared = dx * dx + dy * dy;
+    final distance = distanceSquared > 0 ? distanceSquared : 1.0;
 
     // Curve depth proportional to distance (more curve for longer connections)
-    final curveDepth = distance * 0.15;
+    final curveDepth = distance * 0.0015;
 
-    // Perpendicular vector for curve offset
-    final perpX = -dy / (distance + 0.1);
-    final perpY = dx / (distance + 0.1);
+    // Perpendicular vector for curve offset (normalized)
+    final length = (dx * dx + dy * dy);
+    final normalizer = length > 0 ? length : 1.0;
+    final perpX = -dy / normalizer;
+    final perpY = dx / normalizer;
 
     // Control point offset perpendicular to connection line
     return Offset(

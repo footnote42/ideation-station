@@ -137,16 +137,26 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
 
     if (result == true && mounted) {
-      ref.read(mindMapProvider.notifier).createMindMap(
-            name: nameController.text.isNotEmpty
-                ? nameController.text
-                : 'My Mind Map',
-            centralText: centralTextController.text,
-          );
-    }
+      // Capture values before disposing controllers
+      final mapName = nameController.text.isNotEmpty
+          ? nameController.text
+          : 'My Mind Map';
+      final centralText = centralTextController.text;
 
-    nameController.dispose();
-    centralTextController.dispose();
+      // Dispose controllers before state update
+      nameController.dispose();
+      centralTextController.dispose();
+
+      // Create mind map after dialog is fully closed
+      ref.read(mindMapProvider.notifier).createMindMap(
+            name: mapName,
+            centralText: centralText,
+          );
+    } else {
+      // Dispose controllers if dialog was cancelled
+      nameController.dispose();
+      centralTextController.dispose();
+    }
   }
 
   /// Shows dialog to add a new node (branch or sub-branch).
