@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ideation_station/models/mind_map.dart';
 import 'package:ideation_station/ui/painters/connection_painter.dart';
+import 'package:ideation_station/ui/painters/cross_link_painter.dart';
 import 'package:ideation_station/ui/widgets/node_widget.dart';
 import 'package:ideation_station/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector3;
@@ -13,14 +14,17 @@ import 'package:vector_math/vector_math_64.dart' show Vector3;
 /// - CustomPaint for curved branch connections (FR-007)
 /// - Stack-based absolute positioning for nodes
 /// - Performance optimizations (RepaintBoundary, shouldRepaint)
+/// - Symbol attachment via long-press
 class CanvasWidget extends ConsumerStatefulWidget {
   final MindMap mindMap;
   final Function(String nodeId)? onNodeTap;
+  final Function(String nodeId)? onNodeLongPress;
 
   const CanvasWidget({
     super.key,
     required this.mindMap,
     this.onNodeTap,
+    this.onNodeLongPress,
   });
 
   @override
@@ -101,11 +105,32 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
                         onTap: widget.onNodeTap != null
                             ? () => widget.onNodeTap!(node.id)
                             : null,
+                        onLongPress: widget.onNodeLongPress != null
+                            ? () => widget.onNodeLongPress!(node.id)
+                            : null,
                       ),
                     ),
                   ),
                 );
               }),
+
+              // Layer 3: Cross-links (overlay on nodes)
+              if (widget.mindMap.crossLinks.isNotEmpty)
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: CrossLinkPainter(
+                        mindMap: widget.mindMap,
+                        canvasCenter: Offset(
+                          AppConstants.canvasBoundaryMargin,
+                          AppConstants.canvasBoundaryMargin,
+                        ),
+                        showArrows: true,
+                        showLabels: false,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

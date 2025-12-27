@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ideation_station/models/cross_link.dart';
 import 'package:ideation_station/models/mind_map.dart';
 import 'package:ideation_station/models/node.dart';
+import 'package:ideation_station/models/node_symbol.dart';
 import 'package:ideation_station/models/node_type.dart';
 import 'package:ideation_station/models/position.dart';
 import 'package:ideation_station/services/layout_service.dart';
@@ -302,6 +304,160 @@ class MindMapNotifier extends StateNotifier<MindMap?> {
     );
 
     final updatedNode = node.copyWith(position: newPosition);
+
+    // Update central node if it's being modified
+    final updatedCentral = node.id == currentMap.centralNode.id
+        ? updatedNode
+        : currentMap.centralNode;
+
+    state = currentMap.copyWith(
+      lastModifiedAt: DateTime.now(),
+      centralNode: updatedCentral,
+      nodes: [
+        ...currentMap.nodes.where((n) => n.id != nodeId),
+        updatedNode,
+      ],
+    );
+  }
+
+  /// Adds a cross-link (associative connection) between two nodes.
+  ///
+  /// Cross-links enable non-hierarchical associations between ideas.
+  ///
+  /// Parameters:
+  /// - [sourceNodeId]: Starting node of the connection
+  /// - [targetNodeId]: Ending node of the connection
+  /// - [label]: Optional descriptive label for the relationship
+  ///
+  /// Returns: ID of the created cross-link
+  ///
+  /// Throws: ArgumentError if nodes don't exist or if creating a self-link
+  String? addCrossLink({
+    required String sourceNodeId,
+    required String targetNodeId,
+    String label = '',
+  }) {
+    if (state == null) return null;
+
+    final currentMap = state!;
+
+    // Validate source and target nodes exist
+    final sourceExists = currentMap.nodes.any((n) => n.id == sourceNodeId);
+    final targetExists = currentMap.nodes.any((n) => n.id == targetNodeId);
+
+    if (!sourceExists) {
+      throw ArgumentError('Source node not found: $sourceNodeId');
+    }
+    if (!targetExists) {
+      throw ArgumentError('Target node not found: $targetNodeId');
+    }
+
+    // Prevent self-links
+    if (sourceNodeId == targetNodeId) {
+      throw ArgumentError('Cannot create cross-link from node to itself');
+    }
+
+    // Check for duplicate cross-links
+    final duplicateExists = currentMap.crossLinks.any((link) =>
+        (link.sourceNodeId == sourceNodeId &&
+            link.targetNodeId == targetNodeId) ||
+        (link.sourceNodeId == targetNodeId &&
+            link.targetNodeId == sourceNodeId));
+
+    if (duplicateExists) {
+      throw ArgumentError(
+          'Cross-link already exists between these nodes');
+    }
+
+    // Create new cross-link
+    final crossLinkId = _uuid.v4();
+    final crossLink = CrossLink(
+      id: crossLinkId,
+      sourceNodeId: sourceNodeId,
+      targetNodeId: targetNodeId,
+      label: label,
+      createdAt: DateTime.now(),
+    );
+
+    // Update state
+    state = currentMap.copyWith(
+      lastModifiedAt: DateTime.now(),
+      crossLinks: [...currentMap.crossLinks, crossLink],
+    );
+
+    return crossLinkId;
+  }
+
+  /// Deletes a cross-link by ID.
+  ///
+  /// Parameters:
+  /// - [crossLinkId]: ID of the cross-link to delete
+  void deleteCrossLink(String crossLinkId) {
+    if (state == null) return;
+
+    final currentMap = state!;
+
+    state = currentMap.copyWith(
+      lastModifiedAt: DateTime.now(),
+      crossLinks:
+          currentMap.crossLinks.where((link) => link.id != crossLinkId).toList(),
+    );
+  }
+
+  /// Adds a symbol to a node.
+  ///
+  /// Nodes can have multiple symbols for enhanced visual expression.
+  ///
+  /// Parameters:
+  /// - [nodeId]: ID of the node to add the symbol to
+  /// - [symbol]: The symbol to add
+  void addSymbolToNode(String nodeId, NodeSymbol symbol) {
+    if (state == null) return;
+
+    final currentMap = state!;
+    final node = currentMap.nodes.firstWhere(
+      (n) => n.id == nodeId,
+      orElse: () => throw ArgumentError('Node not found: $nodeId'),
+    );
+
+    final updatedNode = node.copyWith(
+      symbols: [...node.symbols, symbol],
+    );
+
+    // Update central node if it's being modified
+    final updatedCentral = node.id == currentMap.centralNode.id
+        ? updatedNode
+        : currentMap.centralNode;
+
+    state = currentMap.copyWith(
+      lastModifiedAt: DateTime.now(),
+      centralNode: updatedCentral,
+      nodes: [
+        ...currentMap.nodes.where((n) => n.id != nodeId),
+        updatedNode,
+      ],
+    );
+  }
+
+  /// Removes a symbol from a node.
+  ///
+  /// Parameters:
+  /// - [nodeId]: ID of the node to remove the symbol from
+  /// - [symbol]: The symbol to remove
+  void removeSymbolFromNode(String nodeId, NodeSymbol symbol) {
+    if (state == null) return;
+
+    final currentMap = state!;
+    final node = currentMap.nodes.firstWhere(
+      (n) => n.id == nodeId,
+      orElse: () => throw ArgumentError('Node not found: $nodeId'),
+    );
+
+    final updatedNode = node.copyWith(
+      symbols: node.symbols
+          .where((s) => s.type != symbol.type || s.position != symbol.position)
+          .toList(),
+    );
 
     // Update central node if it's being modified
     final updatedCentral = node.id == currentMap.centralNode.id

@@ -13,8 +13,8 @@ class StorageService {
 
   /// Get the directory where mind maps are stored
   Future<Directory> _getMindMapsDirectory() async {
-    final appDocDir = await getApplicationDocumentsPath();
-    final mindMapsDir = Directory('$appDocDir/$_mindMapsDirectory');
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final mindMapsDir = Directory('${appDocDir.path}/$_mindMapsDirectory');
 
     if (!mindMapsDir.existsSync()) {
       await mindMapsDir.create(recursive: true);

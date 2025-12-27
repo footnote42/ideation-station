@@ -6,26 +6,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// - Selected node ID
 /// - Current interaction mode (view, edit, create link)
 /// - Canvas viewport state
+/// - Link creation workflow state
 class CanvasViewState {
   final String? selectedNodeId;
   final CanvasMode mode;
   final double zoomLevel;
+  final String? linkSourceNodeId; // First node tapped during link creation
 
   const CanvasViewState({
     this.selectedNodeId,
     this.mode = CanvasMode.view,
     this.zoomLevel = 1.0,
+    this.linkSourceNodeId,
   });
 
   CanvasViewState copyWith({
     String? selectedNodeId,
     CanvasMode? mode,
     double? zoomLevel,
+    String? linkSourceNodeId,
+    bool clearLinkSource = false,
   }) {
     return CanvasViewState(
       selectedNodeId: selectedNodeId ?? this.selectedNodeId,
       mode: mode ?? this.mode,
       zoomLevel: zoomLevel ?? this.zoomLevel,
+      linkSourceNodeId: clearLinkSource ? null : (linkSourceNodeId ?? this.linkSourceNodeId),
     );
   }
 }
@@ -67,6 +73,39 @@ class CanvasViewNotifier extends StateNotifier<CanvasViewState> {
       clearSelection();
     } else {
       selectNode(nodeId);
+    }
+  }
+
+  /// Starts link creation workflow by setting source node.
+  void startLinkCreation(String sourceNodeId) {
+    state = state.copyWith(
+      mode: CanvasMode.createLink,
+      linkSourceNodeId: sourceNodeId,
+    );
+  }
+
+  /// Completes link creation and returns to view mode.
+  void completeLinkCreation() {
+    state = state.copyWith(
+      mode: CanvasMode.view,
+      clearLinkSource: true,
+    );
+  }
+
+  /// Cancels link creation and returns to view mode.
+  void cancelLinkCreation() {
+    state = state.copyWith(
+      mode: CanvasMode.view,
+      clearLinkSource: true,
+    );
+  }
+
+  /// Toggles link creation mode.
+  void toggleLinkMode() {
+    if (state.mode == CanvasMode.createLink) {
+      cancelLinkCreation();
+    } else {
+      state = state.copyWith(mode: CanvasMode.createLink);
     }
   }
 }

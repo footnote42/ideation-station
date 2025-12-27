@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ideation_station/models/node_symbol.dart';
+import 'package:ideation_station/providers/canvas_view_provider.dart';
 import 'package:ideation_station/providers/mind_map_provider.dart';
 import 'package:ideation_station/ui/widgets/canvas_widget.dart';
+import 'package:ideation_station/ui/widgets/symbol_palette.dart';
 
 /// Main canvas screen for mind map editing.
 ///
@@ -45,14 +48,69 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     super.dispose();
   }
 
+  /// Handles node tap based on current canvas mode.
+  Future<void> _handleNodeTap(String nodeId) async {
+    final canvasView = ref.read(canvasViewProvider);
+
+    if (canvasView.mode == CanvasMode.createLink) {
+      // Link creation mode
+      if (canvasView.linkSourceNodeId == null) {
+        // First tap - set source node
+        ref.read(canvasViewProvider.notifier).startLinkCreation(nodeId);
+      } else if (canvasView.linkSourceNodeId == nodeId) {
+        // Tapped same node - cancel
+        ref.read(canvasViewProvider.notifier).cancelLinkCreation();
+      } else {
+        // Second tap - create cross-link
+        final label = await _showCrossLinkLabelDialog();
+        if (label != null) {
+          try {
+            ref.read(mindMapProvider.notifier).addCrossLink(
+                  sourceNodeId: canvasView.linkSourceNodeId!,
+                  targetNodeId: nodeId,
+                  label: label,
+                );
+            ref.read(canvasViewProvider.notifier).completeLinkCreation();
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error creating cross-link: $e')),
+              );
+            }
+            ref.read(canvasViewProvider.notifier).cancelLinkCreation();
+          }
+        } else {
+          ref.read(canvasViewProvider.notifier).cancelLinkCreation();
+        }
+      }
+    } else {
+      // Normal selection mode
+      setState(() {
+        _selectedNodeId = nodeId;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mindMap = ref.watch(mindMapProvider);
+    final canvasView = ref.watch(canvasViewProvider);
+    final isLinkMode = canvasView.mode == CanvasMode.createLink;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(mindMap?.name ?? 'New Mind Map'),
         actions: [
+          IconButton(
+            icon: Icon(
+              Icons.link,
+              color: isLinkMode ? Theme.of(context).colorScheme.primary : null,
+            ),
+            onPressed: () {
+              ref.read(canvasViewProvider.notifier).toggleLinkMode();
+            },
+            tooltip: isLinkMode ? 'Exit Link Mode' : 'Create Cross-Link',
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _showAddNodeDialog,
@@ -67,9 +125,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           : CanvasWidget(
               mindMap: mindMap,
               onNodeTap: (nodeId) {
-                setState(() {
-                  _selectedNodeId = nodeId;
-                });
+                _handleNodeTap(nodeId);
+              },
+              onNodeLongPress: (nodeId) {
+                _showSymbolPaletteDialog(nodeId);
               },
             ),
       floatingActionButton: mindMap == null
@@ -154,6 +213,68 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         }
       });
     }
+  }
+
+  /// Shows dialog to add a cross-link label.
+  Future<String?> _showCrossLinkLabelDialog() async {
+    final labelController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cross-Link Label'),
+        content: TextField(
+          controller: labelController,
+          decoration: const InputDecoration(
+            labelText: 'Label (optional)',
+            hintText: 'e.g., "relates to", "influences"',
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            Navigator.of(context).pop(value);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(''),
+            child: const Text('Skip'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(labelController.text);
+            },
+            child: const Text('Create Link'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? '';
+  }
+
+  /// Shows dialog to attach a symbol to a node.
+  Future<void> _showSymbolPaletteDialog(String nodeId) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Symbol'),
+        content: SizedBox(
+          width: 300,
+          child: SymbolPaletteWidget(
+            onSymbolSelected: (symbol) {
+              ref.read(mindMapProvider.notifier).addSymbolToNode(nodeId, symbol);
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Shows dialog to add a new node (branch or sub-branch).
