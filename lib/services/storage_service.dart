@@ -1,14 +1,42 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:ideation_station/models/mind_map.dart';
+import 'package:ideation_station/services/storage_service_web.dart';
 import 'package:path_provider/path_provider.dart';
+
+/// Interface for storage service implementations.
+///
+/// Allows platform-specific implementations (file-based for mobile/desktop,
+/// localStorage for web).
+abstract class StorageServiceInterface {
+  Future<void> saveMindMap(MindMap mindMap);
+  Future<MindMap?> loadMindMap(String id);
+  Future<void> renameMindMap(String id, String newName);
+  Future<void> deleteMindMap(String id);
+  Future<List<MindMap>> listMindMaps();
+  Future<List<Map<String, dynamic>>> listMindMapMetadata();
+}
 
 /// Service for persisting mind maps to local device storage.
 ///
-/// Uses path_provider for cross-platform file system access.
+/// Uses path_provider for cross-platform file system access on mobile/desktop.
+/// Uses SharedPreferences (localStorage) for web platform.
 /// Implements atomic file writes for crash safety.
 class StorageService {
+  /// Factory constructor that returns the appropriate platform implementation.
+  static StorageServiceInterface create() {
+    if (kIsWeb) {
+      return StorageServiceWeb();
+    } else {
+      return _StorageServiceFile();
+    }
+  }
+}
+
+/// File-based storage implementation for mobile/desktop platforms.
+class _StorageServiceFile implements StorageServiceInterface {
   static const String _mindMapsDirectory = 'mind_maps';
 
   /// Get the directory where mind maps are stored
@@ -30,6 +58,7 @@ class StorageService {
   ///
   /// Throws StorageFullException if device storage is full (T094).
   /// Throws other exceptions for file system errors.
+  @override
   Future<void> saveMindMap(MindMap mindMap) async {
     final dir = await _getMindMapsDirectory();
     final file = File('${dir.path}/${mindMap.id}.json');
@@ -83,6 +112,7 @@ class StorageService {
   ///
   /// Returns null if the mind map doesn't exist or cannot be loaded.
   /// Validates JSON schema and data integrity (T089).
+  @override
   Future<MindMap?> loadMindMap(String id) async {
     try {
       final dir = await _getMindMapsDirectory();
@@ -151,6 +181,7 @@ class StorageService {
   /// Rename a mind map
   ///
   /// Updates the name in the mind map file and index.
+  @override
   Future<void> renameMindMap(String id, String newName) async {
     try {
       // Load existing mind map
@@ -173,6 +204,7 @@ class StorageService {
   /// Delete a mind map from local storage
   ///
   /// Creates backup before deletion for safety (T086).
+  @override
   Future<void> deleteMindMap(String id) async {
     try {
       final dir = await _getMindMapsDirectory();
@@ -220,6 +252,7 @@ class StorageService {
   /// List all saved mind maps
   ///
   /// Returns a list of MindMap objects sorted by last modified date (newest first).
+  @override
   Future<List<MindMap>> listMindMaps() async {
     try {
       final dir = await _getMindMapsDirectory();
@@ -261,6 +294,7 @@ class StorageService {
   ///
   /// Returns lightweight metadata (id, name, timestamps) from index.json.
   /// Significantly faster than loading full mind maps for large collections.
+  @override
   Future<List<Map<String, dynamic>>> listMindMapMetadata() async {
     try {
       final dir = await _getMindMapsDirectory();

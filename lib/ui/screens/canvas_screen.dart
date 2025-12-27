@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ideation_station/providers/auto_save_provider.dart';
 import 'package:ideation_station/providers/canvas_view_provider.dart';
 import 'package:ideation_station/providers/mind_map_provider.dart';
 import 'package:ideation_station/services/storage_service.dart'
-    show StorageService, StorageFullException;
+    show StorageService, StorageServiceInterface, StorageFullException;
 import 'package:ideation_station/ui/widgets/canvas_widget.dart';
 import 'package:ideation_station/ui/widgets/symbol_palette.dart';
 
@@ -29,7 +30,7 @@ class CanvasScreen extends ConsumerStatefulWidget {
 class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String? _selectedNodeId;
   final TextEditingController _textController = TextEditingController();
-  final StorageService _storageService = StorageService();
+  final StorageServiceInterface _storageService = StorageService.create();
 
   @override
   void initState() {
@@ -173,6 +174,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final mindMap = ref.watch(mindMapProvider);
     final canvasView = ref.watch(canvasViewProvider);
     final isLinkMode = canvasView.mode == CanvasMode.createLink;
+
+    // Watch auto-save provider to activate it (saves changes automatically)
+    ref.watch(autoSaveProvider);
 
     return Scaffold(
       appBar: AppBar(

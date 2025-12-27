@@ -97,18 +97,20 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate visible viewport for culling optimization (T099)
-    final viewport = _getVisibleViewport();
-
-    // Filter visible nodes for large mind map optimization
-    // Only render nodes within viewport (with padding) to maintain 60fps
-    final visibleNodes = widget.mindMap.nodes.where((node) {
-      final canvasPos = Offset(
-        AppConstants.canvasBoundaryMargin + node.position.x,
-        AppConstants.canvasBoundaryMargin + node.position.y,
-      );
-      return _isNodeVisible(canvasPos, viewport);
-    }).toList();
+    // Only use viewport culling for large maps (100+ nodes) to avoid hiding nodes
+    // during initial render. For smaller maps, render all nodes.
+    final visibleNodes = widget.mindMap.nodes.length > 100
+        ? () {
+            final viewport = _getVisibleViewport();
+            return widget.mindMap.nodes.where((node) {
+              final canvasPos = Offset(
+                AppConstants.canvasBoundaryMargin + node.position.x,
+                AppConstants.canvasBoundaryMargin + node.position.y,
+              );
+              return _isNodeVisible(canvasPos, viewport);
+            }).toList();
+          }()
+        : widget.mindMap.nodes;
 
     return Container(
       color: AppConstants.canvasBackground,

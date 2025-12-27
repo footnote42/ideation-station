@@ -6,10 +6,10 @@ import 'package:ideation_station/services/storage_service.dart';
 /// Uses lazy loading - loads only metadata (id, name, timestamps) for efficient display.
 /// Full mind map data is loaded on-demand when user opens a specific map.
 class MindMapListNotifier extends StateNotifier<List<Map<String, dynamic>>> {
-  final StorageService _storageService;
+  final StorageServiceInterface _storageService;
 
-  MindMapListNotifier({StorageService? storageService})
-      : _storageService = storageService ?? StorageService(),
+  MindMapListNotifier({StorageServiceInterface? storageService})
+      : _storageService = storageService ?? StorageService.create(),
         super([]);
 
   /// Load mind map metadata from storage.

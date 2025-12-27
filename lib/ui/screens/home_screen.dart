@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final StorageService _storageService = StorageService();
+  final StorageServiceInterface _storageService = StorageService.create();
 
   @override
   void initState() {

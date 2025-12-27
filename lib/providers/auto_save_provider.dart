@@ -11,11 +11,11 @@ import 'package:ideation_station/services/storage_service.dart';
 /// delay (as per FR-025 and SC-013 performance requirements).
 class AutoSaveNotifier extends StateNotifier<DateTime?> {
   final Ref _ref;
-  final StorageService _storageService;
+  final StorageServiceInterface _storageService;
   Timer? _debounceTimer;
 
-  AutoSaveNotifier(this._ref, {StorageService? storageService})
-      : _storageService = storageService ?? StorageService(),
+  AutoSaveNotifier(this._ref, {StorageServiceInterface? storageService})
+      : _storageService = storageService ?? StorageService.create(),
         super(null) {
     // Listen to mind map changes
     _ref.listen<MindMap?>(mindMapProvider, (previous, next) {

@@ -50,6 +50,7 @@ dependencies:
   # Code generation annotations
   freezed_annotation: ^2.4.0
   json_annotation: ^4.9.0
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
