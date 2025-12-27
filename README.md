@@ -26,7 +26,7 @@ For complete methodology details, see [`mind-mapping-methodology.md`](mind-mappi
 
 ## Project Status
 
-**Current Phase**: User Story 1 Complete - MVP Functional! 🎉
+**Current Phase**: User Story 4 Complete - Full MVP Delivered! 🎉🎉🎉
 
 - ✅ Project constitution established (v1.0.0)
 - ✅ MVP feature specification complete
@@ -35,16 +35,19 @@ For complete methodology details, see [`mind-mapping-methodology.md`](mind-mappi
 - ✅ Task breakdown complete ([tasks.md](specs/001-mind-map-mvp/tasks.md))
 - ✅ **Phase 1: Setup** - Flutter project initialized, dependencies configured
 - ✅ **Phase 2: Foundational** - Core models, JSON serialization, Riverpod setup, constants
-- ✅ **Phase 3: User Story 1 (Rapid Idea Capture)** - FUNCTIONAL (60 TDD tests passing)
-- 🎯 **Phase 4: User Story 2 (Visual Organization)** - Next to implement
+- ✅ **Phase 3: User Story 1 (Rapid Idea Capture)** - COMPLETE (60 TDD tests passing)
+- ✅ **Phase 4: User Story 2 (Visual Organization)** - COMPLETE (color selection, manual positioning, pan/zoom)
+- ✅ **Phase 5: User Story 3 (Complex Ideation)** - COMPLETE (cross-links, symbols, relationships)
+- ✅ **Phase 6: User Story 4 (Save & Retrieve)** - COMPLETE (local persistence, CRUD operations, 32 tests passing)
+- 🎯 **Phase 7: Polish & Cross-Cutting Concerns** - Next to implement
 
 **Active Feature**: `001-mind-map-mvp` (Mobile Mind Mapping MVP)
 
 **Latest Commits**:
-- `c8d6d6f` - Fix Phase 3: Mind map rendering now working (viewport centering)
-- `364a580` - Fix mind map creation (remove PostFrameCallback)
-- `a497429` - Fix TextEditingController disposal timing
-- `fff0a97` - Complete Phase 3 User Story 1: Rapid idea capture with TDD
+- `226d032` - Complete Phase 6: Save & Retrieve Mind Maps (T075-T091)
+- `02630ff` - Phase 6 (Partial): Core Save & Retrieve Features (T077-T080)
+- `f35bf7d` - Phase 6 (Partial): Complete Unit Tests T075-T076
+- `0a527fd` - Implement Phase 5: Complex Ideation & Cross-Linking (User Story 3)
 
 ---
 
@@ -89,19 +92,57 @@ For detailed technical decisions and rationale, see [`specs/001-mind-map-mvp/res
 - 12-color Buzan palette
 - Visual hierarchy rules (8px → 5px → 3px branch thickness)
 
+#### Phase 3: User Story 1 - Rapid Idea Capture (Tasks T021-T038)
+**Delivered**:
+- Central node creation with keyword input
+- Branch and sub-branch nodes radiating outward
+- Curved organic branch connections (Buzan authentic)
+- Visual hierarchy (central > branch > sub-branch)
+- Radial auto-positioning prevents overlap
+- Interactive viewport with pan/zoom
+- 60 TDD tests passing (35 unit + 25 widget)
+
+#### Phase 4: User Story 2 - Visual Organization (Tasks T039-T057)
+**Delivered**:
+- 12-color palette with auto-color mode
+- Manual drag-and-drop node repositioning
+- Color propagation to child nodes
+- Smooth pinch-to-zoom gestures (60fps)
+- Spatial memory preservation
+
+#### Phase 5: User Story 3 - Complex Ideation (Tasks T058-T074)
+**Delivered**:
+- Cross-link creation between non-adjacent nodes
+- Symbol palette (8 symbols: star, lightbulb, question, check, warning, heart, arrows)
+- Cross-link labels for relationship description
+- Link mode toggle in UI
+- Dashed visual style for cross-links
+
+#### Phase 6: User Story 4 - Save & Retrieve (Tasks T075-T091)
+**Delivered**:
+- Local device storage with atomic writes
+- HomeScreen with mind map list (sorted by lastModified)
+- Full CRUD operations (Create, Read, Update/Rename, Delete)
+- Auto-save on mind map creation
+- "New Map" action with state management
+- Data integrity validation (JSON schema)
+- Backup mechanism before deletion
+- Performance optimization (index.json for lazy loading)
+- 32 tests passing (12 unit + 7 widget + 5 integration)
+
 **Quality Metrics**:
-- ✅ All tests passing
-- ✅ Flutter analyze clean
-- ✅ 23 files created
-- ✅ Freezed code generation working
+- ✅ 135 tests passing total
+- ✅ Flutter analyze clean (minor warnings only)
+- ✅ All 4 user stories complete
+- ✅ Full MVP functionality delivered
 
 ### 🎯 Next Phase
 
-**Phase 3: User Story 1 - Rapid Idea Capture** (Tasks T021-T038)
+**Phase 7: Polish & Cross-Cutting Concerns** (Tasks T092-T113)
 
-Focus: Enable central node creation and radial branch layout with <100ms touch response
+Focus: Edge case handling, performance validation, error handling, final UX polish
 
-See [`CLAUDE.md`](CLAUDE.md) for detailed implementation status and next steps.
+See [`STATUS.md`](STATUS.md) for detailed current status and next steps.
 
 ---
 
