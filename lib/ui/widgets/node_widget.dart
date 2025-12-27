@@ -35,18 +35,18 @@ class NodeWidget extends StatelessWidget {
             ),
             padding: _getPadding(),
             decoration: BoxDecoration(
-              color: node.color.withOpacity(0.15),
+              color: node.color.withValues(alpha: 0.15),
               border: Border.all(
                 color: isSelected
-                    ? node.color.withOpacity(1.0)
-                    : node.color.withOpacity(0.6),
+                    ? node.color.withValues(alpha: 1.0)
+                    : node.color.withValues(alpha: 0.6),
                 width: _getBorderWidth(),
               ),
               borderRadius: BorderRadius.circular(_getBorderRadius()),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: node.color.withOpacity(0.3),
+                        color: node.color.withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

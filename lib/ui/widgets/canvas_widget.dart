@@ -4,6 +4,7 @@ import 'package:ideation_station/models/mind_map.dart';
 import 'package:ideation_station/ui/painters/connection_painter.dart';
 import 'package:ideation_station/ui/widgets/node_widget.dart';
 import 'package:ideation_station/utils/constants.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector3;
 
 /// Main canvas widget for displaying and interacting with mind maps.
 ///
@@ -40,7 +41,8 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
       final screenSize = MediaQuery.of(context).size;
       final dx = screenSize.width / 2 - AppConstants.canvasBoundaryMargin;
       final dy = screenSize.height / 2 - AppConstants.canvasBoundaryMargin;
-      _transformationController.value = Matrix4.identity()..translate(dx, dy);
+      _transformationController.value = Matrix4.identity()
+        ..translateByVector3(Vector3(dx, dy, 0.0));
     });
   }
 

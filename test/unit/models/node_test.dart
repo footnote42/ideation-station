@@ -128,7 +128,7 @@ void main() {
         'text': 'Test Node',
         'type': 'branch',
         'position': {'x': 100.0, 'y': 50.0},
-        'color': Colors.red.value,
+        'color': Colors.red.toARGB32(),
         'symbols': [],
         'parentId': 'parent-1',
         'childIds': ['child-1'],
@@ -141,7 +141,7 @@ void main() {
       expect(node.type, NodeType.branch);
       expect(node.position.x, 100.0);
       expect(node.position.y, 50.0);
-      expect(node.color.value, Colors.red.value);
+      expect(node.color.toARGB32(), Colors.red.toARGB32());
       expect(node.parentId, 'parent-1');
       expect(node.childIds, ['child-1']);
     });

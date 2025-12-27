@@ -219,7 +219,7 @@ void main() {
           'text': 'Main Idea',
           'type': 'central',
           'position': {'x': 0.0, 'y': 0.0},
-          'color': Colors.blue.value,
+          'color': Colors.blue.toARGB32(),
           'symbols': [],
           'childIds': [],
         },
@@ -229,7 +229,7 @@ void main() {
             'text': 'Main Idea',
             'type': 'central',
             'position': {'x': 0.0, 'y': 0.0},
-            'color': Colors.blue.value,
+            'color': Colors.blue.toARGB32(),
             'symbols': [],
             'childIds': [],
           }

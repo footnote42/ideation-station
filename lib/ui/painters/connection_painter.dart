@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ideation_station/models/mind_map.dart';
 import 'package:ideation_station/models/node.dart';
 import 'package:ideation_station/models/node_type.dart';
+import 'package:ideation_station/models/position.dart';
 import 'package:ideation_station/utils/constants.dart';
 
 /// Custom painter for rendering curved organic branch connections.
@@ -57,7 +58,7 @@ class ConnectionPainter extends CustomPainter {
 
     // Create paint with parent's color (branches inherit parent color)
     final paint = Paint()
-      ..color = parent.color.withOpacity(0.8)
+      ..color = parent.color.withValues(alpha: 0.8)
       ..strokeWidth = thickness
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -153,7 +154,7 @@ class ConnectionPainter extends CustomPainter {
   }
 
   /// Converts normalized position to canvas offset.
-  Offset _positionToOffset(position, Size size) {
+  Offset _positionToOffset(Position position, Size size) {
     // Center of canvas
     final centerX = size.width / 2;
     final centerY = size.height / 2;
