@@ -219,7 +219,9 @@ class MindMapNotifier extends StateNotifier<MindMap?> {
     );
   }
 
-  /// Updates node color.
+  /// Updates node color and propagates to all descendants (FR-009).
+  ///
+  /// When a parent node's color changes, all children inherit that color recursively.
   ///
   /// Parameters:
   /// - [nodeId]: ID of the node to update
@@ -233,7 +235,73 @@ class MindMapNotifier extends StateNotifier<MindMap?> {
       orElse: () => throw ArgumentError('Node not found: $nodeId'),
     );
 
-    final updatedNode = node.copyWith(color: newColor);
+    // Update the node and all its descendants with the new color
+    final updatedNodes = _propagateColorToDescendants(
+      currentMap.nodes,
+      nodeId,
+      newColor,
+    );
+
+    // Update central node if it's being modified
+    final updatedCentral = node.id == currentMap.centralNode.id
+        ? updatedNodes.firstWhere((n) => n.id == currentMap.centralNode.id)
+        : currentMap.centralNode;
+
+    state = currentMap.copyWith(
+      lastModifiedAt: DateTime.now(),
+      centralNode: updatedCentral,
+      nodes: updatedNodes,
+    );
+  }
+
+  /// Recursively propagate color to all descendants of a node.
+  List<Node> _propagateColorToDescendants(
+    List<Node> nodes,
+    String nodeId,
+    Color newColor,
+  ) {
+    final updatedNodes = <Node>[];
+    final nodesToUpdate = <String>{nodeId};
+
+    // Find all descendants recursively
+    void findDescendants(String parentId) {
+      for (final node in nodes) {
+        if (node.parentId == parentId && !nodesToUpdate.contains(node.id)) {
+          nodesToUpdate.add(node.id);
+          findDescendants(node.id);
+        }
+      }
+    }
+
+    findDescendants(nodeId);
+
+    // Update colors for all nodes
+    for (final node in nodes) {
+      if (nodesToUpdate.contains(node.id)) {
+        updatedNodes.add(node.copyWith(color: newColor));
+      } else {
+        updatedNodes.add(node);
+      }
+    }
+
+    return updatedNodes;
+  }
+
+  /// Updates node position (for drag-and-drop repositioning).
+  ///
+  /// Parameters:
+  /// - [nodeId]: ID of the node to update
+  /// - [newPosition]: New position on the canvas
+  void updateNodePosition(String nodeId, Position newPosition) {
+    if (state == null) return;
+
+    final currentMap = state!;
+    final node = currentMap.nodes.firstWhere(
+      (n) => n.id == nodeId,
+      orElse: () => throw ArgumentError('Node not found: $nodeId'),
+    );
+
+    final updatedNode = node.copyWith(position: newPosition);
 
     // Update central node if it's being modified
     final updatedCentral = node.id == currentMap.centralNode.id

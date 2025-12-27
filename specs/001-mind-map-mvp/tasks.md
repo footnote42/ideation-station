@@ -116,28 +116,28 @@
 
 ### Unit Tests for User Story 2
 
-- [ ] T039 [P] [US2] Unit test for StorageService in test/unit/services/storage_service_test.dart (test saveMindMap, loadMindMap, JSON serialization integrity)
-- [ ] T040 [P] [US2] Unit test for color propagation to children in test/unit/services/mind_map_service_test.dart (verify children inherit parent color per FR-009)
+- [x] T039 [P] [US2] Unit test for StorageService in test/unit/services/storage_service_test.dart (test saveMindMap, loadMindMap, JSON serialization integrity)
+- [x] T040 [P] [US2] Unit test for color propagation to children in test/unit/providers/mind_map_provider_test.dart (verify children inherit parent color per FR-009)
 
 ### Widget Tests for User Story 2
 
-- [ ] T041 [P] [US2] Widget test for ColorPickerWidget in test/widget/color_picker_test.dart (test palette display, color selection callback)
-- [ ] T042 [P] [US2] Widget test for draggable NodeWidget in test/widget/node_drag_test.dart (test drag gesture handling, position update)
+- [x] T041 [P] [US2] Widget test for ColorPickerWidget in test/widget/color_picker_test.dart (test palette display, color selection callback)
+- [x] T042 [P] [US2] Widget test for draggable NodeWidget in test/widget/node_drag_test.dart (test drag gesture handling, position update)
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Create StorageService in lib/services/storage_service.dart using path_provider for file system access with saveMindMap(), loadMindMap(), deleteMindMap(), listMindMaps() methods
-- [ ] T044 [P] [US2] Create ColorPickerWidget in lib/ui/widgets/color_picker.dart using flex_color_picker with custom palette from constants.dart
-- [ ] T045 [US2] Implement auto-color mode in lib/providers/mind_map_provider.dart (optional auto-assign new color to each main branch per FR-008a)
-- [ ] T046 [US2] Add drag gesture handling to NodeWidget (Draggable widget wrapper, update position on drag end)
-- [ ] T047 [US2] Implement color propagation logic in MindMapNotifier (when parent color changes, recursively update children per FR-009)
-- [ ] T048 [US2] Configure InteractiveViewer in CanvasWidget with minScale: 0.5, maxScale: 2.0, boundaryMargin: infinite per FR-012
-- [ ] T049 [US2] Implement pan gesture handling (two-finger pan already built into InteractiveViewer per FR-013)
-- [ ] T050 [US2] Implement pinch-to-zoom gesture handling (already built into InteractiveViewer per FR-012)
-- [ ] T051 [US2] Add auto-save mechanism with 500ms debounce in lib/providers/auto_save_provider.dart using ref.listen on mindMapProvider
-- [ ] T052 [US2] Implement atomic file writes in StorageService (temp file → rename for crash safety)
-- [ ] T053 [US2] Add RepaintBoundary to NodeWidget for performance optimization (isolate repaints per research.md)
-- [ ] T054 [US2] Implement shouldRepaint() optimization in ConnectionPainter (only repaint when connections change)
+- [x] T043 [P] [US2] Create StorageService in lib/services/storage_service.dart using path_provider for file system access with saveMindMap(), loadMindMap(), deleteMindMap(), listMindMaps() methods
+- [x] T044 [P] [US2] Create ColorPickerWidget in lib/ui/widgets/color_picker.dart using custom palette from constants.dart
+- [x] T045 [US2] Implement auto-color mode in lib/providers/mind_map_provider.dart (optional auto-assign new color to each main branch per FR-008a)
+- [x] T046 [US2] Add drag gesture handling to NodeWidget (Draggable widget wrapper, update position on drag end)
+- [x] T047 [US2] Implement color propagation logic in MindMapNotifier (when parent color changes, recursively update children per FR-009)
+- [x] T048 [US2] Configure InteractiveViewer in CanvasWidget with minScale: 0.5, maxScale: 2.0, boundaryMargin: infinite per FR-012
+- [x] T049 [US2] Implement pan gesture handling (two-finger pan already built into InteractiveViewer per FR-013)
+- [x] T050 [US2] Implement pinch-to-zoom gesture handling (already built into InteractiveViewer per FR-012)
+- [x] T051 [US2] Add auto-save mechanism with 500ms debounce in lib/providers/auto_save_provider.dart using ref.listen on mindMapProvider
+- [x] T052 [US2] Implement atomic file writes in StorageService (temp file → rename for crash safety)
+- [x] T053 [US2] Add RepaintBoundary to NodeWidget for performance optimization (isolate repaints per research.md)
+- [x] T054 [US2] Implement shouldRepaint() optimization in ConnectionPainter (only repaint when connections change)
 
 ### Integration Tests for User Story 2
 
