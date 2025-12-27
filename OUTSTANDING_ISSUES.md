@@ -1,14 +1,36 @@
 # Outstanding Issues and Technical Debt
 
-**Date**: 2025-12-27
+**Date**: 2025-12-27 (Updated after web compatibility testing)
 **Phase Completed**: Phase 7 - Polish & Cross-Cutting Concerns (17/22 tasks)
-**Status**: Production-Ready MVP - Polished & Optimized 🚀
+**Status**: Production-Ready MVP with Web Support - Critical Bugs Fixed 🚀
+
+---
+
+## Recent Updates (2025-12-27 Evening)
+
+### ✅ Critical Fixes Completed
+1. **Web Storage Compatibility** - Fixed MissingPluginException
+   - Added shared_preferences for web localStorage
+   - Created StorageServiceWeb implementation
+   - Platform detection automatically selects correct storage backend
+
+2. **Auto-Save Not Running** - Fixed branches not persisting
+   - Auto-save provider existed but was never activated
+   - Added ref.watch(autoSaveProvider) to CanvasScreen
+   - All changes now save automatically with 500ms debounce
+
+3. **Central Node Not Appearing** - Fixed viewport culling bug
+   - Culling was hiding nodes during initial render
+   - Now only applies to large maps (100+ nodes)
+   - Small maps render all nodes immediately
+
+**Commit**: `5fe7343` - Fix critical web compatibility and auto-save bugs
 
 ---
 
 ## Summary
 
-Phase 7 implementation is substantially complete with **17/22 tasks finished** (77%). All core features delivered, polished, and optimized:
+Phase 7 implementation is substantially complete with **17/22 tasks finished** (77%). Core features delivered, polished, and optimized:
 - ✅ **User Story 1**: Rapid idea capture (central node, radial branches)
 - ✅ **User Story 2**: Visual organization (colors, drag-drop, zoom)
 - ✅ **User Story 3**: Complex ideation (cross-links, symbols)
@@ -102,6 +124,87 @@ Manual testing confirms all features functional and polished across all screens.
 **Action Item**: Run bulk fix with `flutter fix --apply` or update manually during code cleanup
 
 **Priority**: Low (cosmetic)
+
+---
+
+## Missing MVP Features (Discovered During Web Testing)
+
+### 1. Delete Node/Branch Functionality
+**Status**: Not Implemented
+**Priority**: HIGH
+
+**Current State**: No UI to delete nodes or branches once created
+
+**User Impact**: Users cannot remove mistakes or unwanted nodes; must start over with new mind map
+
+**Expected Behavior**:
+- Right-click or long-press on node → Delete option
+- Confirmation dialog for destructive action
+- Delete node and all its children (cascade)
+- Update parent's childIds list
+
+**Implementation Complexity**: Medium
+- Update MindMapProvider with deleteNode method
+- Add context menu or action sheet UI
+- Handle cascade deletion for child nodes
+- Preserve cross-links integrity
+
+**Action Item**: Implement in post-MVP Phase 8 or as hotfix
+
+---
+
+### 2. Color Picker UI Not Accessible
+**Status**: Partially Implemented
+**Priority**: MEDIUM
+
+**Current State**:
+- Color picker widget exists (`lib/ui/widgets/color_picker.dart`)
+- Colors are auto-assigned to branches
+- Manual color changes possible via provider
+- **BUT**: No UI to access color picker for existing nodes
+
+**User Impact**: Users cannot manually change node colors after creation
+
+**Expected Behavior**:
+- Tap on node → Color option in menu
+- Show color picker dialog
+- Apply color to node and children (per Buzan methodology)
+
+**Implementation Complexity**: Low
+- Add color picker dialog to node interaction menu
+- Wire up to existing MindMapProvider.updateNodeColor method
+- Already implemented in Phase 4, just needs UI access point
+
+**Action Item**: Add color picker menu item to node context menu
+
+---
+
+### 3. Text Positioning (Design Issue)
+**Status**: Design Implementation Mismatch
+**Priority**: LOW
+
+**Current State**: Node text renders inside rectangular node boxes (current implementation)
+
+**Expected Behavior** (per original specification): Text should appear centered above connecting lines, not inside boxes
+
+**Impact**: Visual style differs from pure Buzan methodology (keywords float on branches)
+
+**Trade-offs**:
+- **Current**: Better touch targets, clearer node boundaries, easier to read
+- **Buzan Pure**: More organic visual flow, text on branches themselves
+
+**Design Decision Needed**:
+- Keep current boxed design (better for mobile UX)
+- OR implement floating text on branches (more Buzan-authentic)
+
+**Complexity**: High if changing
+- Would require major redesign of NodeWidget
+- Touch target detection becomes more complex
+- May hurt mobile usability
+
+**Recommendation**: Keep current design (boxed nodes). It provides better UX for mobile/touch interfaces while maintaining Buzan principles (radial structure, keywords, colors, hierarchy).
+
+**Action Item**: Document design decision and close issue, OR schedule major redesign for v2.0
 
 ---
 

@@ -41,23 +41,25 @@ For complete methodology details, see [`mind-mapping-methodology.md`](mind-mappi
 - ✅ **Phase 6: User Story 4 (Save & Retrieve)** - COMPLETE (local persistence, CRUD operations, 32 tests passing)
 - ✅ **Phase 7: Polish & Cross-Cutting Concerns** - 17/22 COMPLETE (91% test coverage, production-ready)
 
-**Active Feature**: `001-mind-map-mvp` (Mobile Mind Mapping MVP) - **PRODUCTION READY**
+**Active Feature**: `001-mind-map-mvp` (Mobile Mind Mapping MVP) - **PRODUCTION READY + WEB SUPPORT**
 
 **Latest Commits**:
+- `5fe7343` - 🌐 **WEB COMPATIBILITY**: Fix critical web storage and auto-save bugs
 - `9e4c63f` - Phase 7 (Additional): Optimization & Error Handling (T095, T099, T105-T106)
 - `b5e02d3` - Phase 7 (Partial): Polish & Edge Case Handling (T092-T096, T098, T100-T102, T104)
 - `226d032` - Complete Phase 6: Save & Retrieve Mind Maps (T075-T091)
-- `0a527fd` - Implement Phase 5: Complex Ideation & Cross-Linking (User Story 3)
 
 ---
 
 ## Technology Stack
 
-- **Framework**: Flutter 3.38.5 (native iOS/Android)
+- **Framework**: Flutter 3.38.5 (native iOS/Android + Web)
 - **Language**: Dart 3.10.4
 - **Canvas Rendering**: CustomPaint + InteractiveViewer (built-in)
 - **State Management**: Riverpod 2.6.1
-- **Storage**: Local JSON files via path_provider 2.1.5
+- **Storage**:
+  - Mobile/Desktop: path_provider 2.1.5 (local JSON files)
+  - Web: shared_preferences 2.5.4 (browser localStorage)
 - **Code Generation**: Freezed 2.5.8 + json_serializable 6.9.5
 - **Testing**: flutter_test, integration_test, mockito 5.4.6
 
