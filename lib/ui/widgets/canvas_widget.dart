@@ -56,8 +56,60 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
     super.dispose();
   }
 
+  /// Calculate visible viewport bounds for culling (T099).
+  ///
+  /// Returns the visible rectangle in canvas coordinates, with padding for smooth scrolling.
+  Rect _getVisibleViewport() {
+    final screenSize = MediaQuery.of(context).size;
+    final transform = _transformationController.value;
+
+    // Get scale and translation from transformation matrix
+    final scale = transform.getMaxScaleOnAxis();
+    final translation = transform.getTranslation();
+
+    // Calculate visible area in canvas coordinates
+    // Add padding (50% extra) to avoid pop-in during scrolling/zooming
+    const paddingFactor = 1.5;
+    final viewportWidth = (screenSize.width / scale) * paddingFactor;
+    final viewportHeight = (screenSize.height / scale) * paddingFactor;
+
+    final visibleLeft = (-translation.x / scale) - (viewportWidth * 0.25);
+    final visibleTop = (-translation.y / scale) - (viewportHeight * 0.25);
+
+    return Rect.fromLTWH(visibleLeft, visibleTop, viewportWidth, viewportHeight);
+  }
+
+  /// Check if a node is within the visible viewport (T099).
+  bool _isNodeVisible(Offset nodePosition, Rect viewport) {
+    // Node rendering bounds (approximate)
+    const nodeWidth = 150.0;
+    const nodeHeight = 80.0;
+
+    final nodeRect = Rect.fromLTWH(
+      nodePosition.dx - nodeWidth / 2,
+      nodePosition.dy - nodeHeight / 2,
+      nodeWidth,
+      nodeHeight,
+    );
+
+    return viewport.overlaps(nodeRect);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Calculate visible viewport for culling optimization (T099)
+    final viewport = _getVisibleViewport();
+
+    // Filter visible nodes for large mind map optimization
+    // Only render nodes within viewport (with padding) to maintain 60fps
+    final visibleNodes = widget.mindMap.nodes.where((node) {
+      final canvasPos = Offset(
+        AppConstants.canvasBoundaryMargin + node.position.x,
+        AppConstants.canvasBoundaryMargin + node.position.y,
+      );
+      return _isNodeVisible(canvasPos, viewport);
+    }).toList();
+
     return Container(
       color: AppConstants.canvasBackground,
       child: InteractiveViewer(
@@ -87,8 +139,8 @@ class _CanvasWidgetState extends ConsumerState<CanvasWidget> {
                 ),
               ),
 
-              // Layer 2: Nodes (foreground)
-              ...widget.mindMap.nodes.map((node) {
+              // Layer 2: Nodes (foreground) - viewport culled for performance (T099)
+              ...visibleNodes.map((node) {
                 // Convert normalized position to canvas position
                 final canvasX = AppConstants.canvasBoundaryMargin + node.position.x;
                 final canvasY = AppConstants.canvasBoundaryMargin + node.position.y;

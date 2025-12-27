@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ideation_station/ui/screens/home_screen.dart';
+import 'package:ideation_station/ui/widgets/error_boundary.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure global error handling (T105)
+  configureErrorHandling();
 
   // Allow all device orientations (portrait and landscape)
   // Handles edge case 3: graceful rotation handling
