@@ -27,6 +27,9 @@ class StorageService {
   ///
   /// Uses atomic write pattern (write to temp file, then rename) for safety.
   /// If a mind map with the same ID already exists, it will be overwritten.
+  ///
+  /// Throws StorageFullException if device storage is full (T094).
+  /// Throws other exceptions for file system errors.
   Future<void> saveMindMap(MindMap mindMap) async {
     final dir = await _getMindMapsDirectory();
     final file = File('${dir.path}/${mindMap.id}.json');
@@ -45,6 +48,28 @@ class StorageService {
 
       // Update index with metadata
       await _updateIndex(mindMap);
+    } on FileSystemException catch (e) {
+      // Clean up temp file if it exists
+      if (tempFile.existsSync()) {
+        await tempFile.delete();
+      }
+
+      // Check if error is due to storage full (T094)
+      // Common error messages for storage full:
+      // - "No space left on device" (Linux/Android)
+      // - "The disk is full" (iOS)
+      // - Error code 28 (ENOSPC)
+      if (e.message.contains('space') ||
+          e.message.contains('full') ||
+          e.message.contains('disk') ||
+          e.osError?.errorCode == 28) {
+        throw StorageFullException(
+          'Device storage is full. Please free up space by deleting old mind maps or other files.',
+        );
+      }
+
+      // Other file system error
+      rethrow;
     } catch (e) {
       // Clean up temp file if it exists
       if (tempFile.existsSync()) {
@@ -344,4 +369,16 @@ class StorageService {
       // Silently fail
     }
   }
+}
+
+/// Exception thrown when device storage is full (T094 - Edge case 4).
+///
+/// Provides user-friendly message suggesting to delete old mind maps.
+class StorageFullException implements Exception {
+  final String message;
+
+  StorageFullException(this.message);
+
+  @override
+  String toString() => message;
 }

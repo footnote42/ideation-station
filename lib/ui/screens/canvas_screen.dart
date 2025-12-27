@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ideation_station/providers/canvas_view_provider.dart';
 import 'package:ideation_station/providers/mind_map_provider.dart';
-import 'package:ideation_station/services/storage_service.dart';
+import 'package:ideation_station/services/storage_service.dart'
+    show StorageService, StorageFullException;
 import 'package:ideation_station/ui/widgets/canvas_widget.dart';
 import 'package:ideation_station/ui/widgets/symbol_palette.dart';
 
@@ -129,6 +130,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (currentMap != null) {
       try {
         await _storageService.saveMindMap(currentMap);
+      } on StorageFullException catch (e) {
+        // Handle storage full error (T094 - Edge case 4)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Manage Maps',
+                onPressed: () {
+                  Navigator.of(context).pop(); // Go back to home screen
+                },
+              ),
+            ),
+          );
+          return;
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -227,49 +245,79 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Mind Map'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Mind Map Name',
-                hintText: 'Enter a name for your mind map',
-              ),
-              autofocus: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final charCount = centralTextController.text.length;
+          final wordCount = centralTextController.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+
+          // Gentle feedback for central node (T102)
+          String helperText;
+          Color? helperColor;
+
+          if (charCount == 0) {
+            helperText = 'Tip: Use a single keyword for your main idea';
+            helperColor = null;
+          } else if (wordCount == 1) {
+            helperText = 'Perfect! Single keywords work best';
+            helperColor = Colors.green;
+          } else if (wordCount <= 3) {
+            helperText = 'Good! $wordCount words ($charCount chars)';
+            helperColor = Colors.blue;
+          } else {
+            helperText = 'Consider shortening: $wordCount words ($charCount chars)';
+            helperColor = Colors.orange;
+          }
+
+          return AlertDialog(
+            title: const Text('Create Mind Map'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mind Map Name',
+                    hintText: 'Enter a name for your mind map',
+                  ),
+                  autofocus: false,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: centralTextController,
+                  decoration: InputDecoration(
+                    labelText: 'Central Idea',
+                    hintText: 'Enter your main idea (keyword)',
+                    helperText: helperText,
+                    helperStyle: helperColor != null
+                        ? TextStyle(color: helperColor)
+                        : null,
+                    counterText: charCount > 0 ? '$charCount chars' : null,
+                  ),
+                  autofocus: true,
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  onSubmitted: (_) {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: centralTextController,
-              decoration: const InputDecoration(
-                labelText: 'Central Idea',
-                hintText: 'Enter your main idea (keyword)',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
               ),
-              autofocus: true,
-              onSubmitted: (_) {
-                if (centralTextController.text.isNotEmpty) {
+              ElevatedButton(
+                onPressed: () {
+                  // Allow empty text - will use placeholder "..." per edge case 2
                   Navigator.of(context).pop(true);
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (centralTextController.text.isNotEmpty) {
-                Navigator.of(context).pop(true);
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          );
+        },
       ),
     );
 
@@ -278,7 +326,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final mapName = nameController.text.isNotEmpty
           ? nameController.text
           : 'My Mind Map';
-      final centralText = centralTextController.text;
+      // Use placeholder "..." for empty text per edge case 2
+      final centralText = centralTextController.text.isEmpty
+          ? '...'
+          : centralTextController.text;
 
       // Defer state change until dialog animation completes
       // Controllers will be garbage collected automatically (they're local variables)
@@ -292,7 +343,31 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           // Save to storage after creation (T083)
           final mindMap = ref.read(mindMapProvider);
           if (mindMap != null) {
-            await _storageService.saveMindMap(mindMap);
+            try {
+              await _storageService.saveMindMap(mindMap);
+            } on StorageFullException catch (e) {
+              // Handle storage full error (T094 - Edge case 4)
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(e.message),
+                    duration: const Duration(seconds: 5),
+                    action: SnackBarAction(
+                      label: 'Manage Maps',
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Go back to home screen
+                      },
+                    ),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error saving mind map: $e')),
+                );
+              }
+            }
           }
         }
       });
@@ -370,54 +445,88 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_selectedNodeId == null
-            ? 'Add Branch Node'
-            : 'Add Sub-Branch Node'),
-        content: TextField(
-          controller: _textController,
-          decoration: InputDecoration(
-            labelText: 'Node Text',
-            hintText: _selectedNodeId == null
-                ? 'Enter branch keyword'
-                : 'Enter sub-branch keyword',
-            helperText: 'Tip: Keep it short (1-4 words)',
-          ),
-          autofocus: true,
-          onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              Navigator.of(context).pop(value);
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_textController.text.isNotEmpty) {
-                Navigator.of(context).pop(_textController.text);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final charCount = _textController.text.length;
+          final wordCount = _textController.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+
+          // Gentle feedback based on length (T102)
+          String helperText;
+          Color? helperColor;
+
+          if (charCount == 0) {
+            helperText = 'Tip: Use 1-2 keywords for best results';
+            helperColor = null;
+          } else if (wordCount == 1) {
+            helperText = 'Perfect! Single keywords work best';
+            helperColor = Colors.green;
+          } else if (wordCount <= 3) {
+            helperText = 'Good! $wordCount words ($charCount chars)';
+            helperColor = Colors.blue;
+          } else {
+            helperText = 'Consider shortening: $wordCount words ($charCount chars)';
+            helperColor = Colors.orange;
+          }
+
+          return AlertDialog(
+            title: Text(_selectedNodeId == null
+                ? 'Add Branch Node'
+                : 'Add Sub-Branch Node'),
+            content: TextField(
+              controller: _textController,
+              decoration: InputDecoration(
+                labelText: 'Node Text',
+                hintText: _selectedNodeId == null
+                    ? 'Enter branch keyword'
+                    : 'Enter sub-branch keyword',
+                helperText: helperText,
+                helperStyle: helperColor != null
+                    ? TextStyle(color: helperColor)
+                    : null,
+                counterText: charCount > 0 ? '$charCount chars' : null,
+              ),
+              autofocus: true,
+              onChanged: (value) {
+                // Update helper text on each keystroke
+                setState(() {});
+              },
+              onSubmitted: (value) {
+                // Allow empty submissions - will use placeholder "..." per edge case 2
+                Navigator.of(context).pop(value);
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Allow empty text - will use placeholder "..." per edge case 2
+                  Navigator.of(context).pop(_textController.text);
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
       ),
     );
 
-    if (result != null && result.isNotEmpty) {
+    if (result != null) {
+      // Use placeholder "..." for empty text per edge case 2
+      final nodeText = result.isEmpty ? '...' : result;
+
       if (_selectedNodeId == null) {
         // Add branch node to central node
         ref.read(mindMapProvider.notifier).addBranchNode(
-              text: result,
+              text: nodeText,
             );
       } else {
         // Add sub-branch to selected node
         ref.read(mindMapProvider.notifier).addSubBranch(
               parentId: _selectedNodeId!,
-              text: result,
+              text: nodeText,
             );
       }
 
