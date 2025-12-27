@@ -14,9 +14,13 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 class MockPathProviderPlatform extends Fake
     with MockPlatformInterfaceMixin
     implements PathProviderPlatform {
+  final String? _testPath;
+
+  MockPathProviderPlatform(this._testPath);
+
   @override
   Future<String?> getApplicationDocumentsPath() async {
-    return Directory.systemTemp.createTemp('test_storage').then((dir) => dir.path);
+    return _testPath;
   }
 }
 
@@ -25,11 +29,11 @@ void main() {
   late Directory testDir;
 
   setUp(() async {
-    // Register mock path provider
-    PathProviderPlatform.instance = MockPathProviderPlatform();
-
     // Create test directory
     testDir = await Directory.systemTemp.createTemp('test_storage');
+
+    // Register mock path provider with test directory
+    PathProviderPlatform.instance = MockPathProviderPlatform(testDir.path);
 
     // Initialize storage service
     storageService = StorageService();
@@ -68,8 +72,8 @@ void main() {
       // Act
       await storageService.saveMindMap(mindMap);
 
-      // Assert - file should exist
-      final file = File('${testDir.path}/map-1.json');
+      // Assert - file should exist in mind_maps subdirectory
+      final file = File('${testDir.path}/mind_maps/map-1.json');
       expect(file.existsSync(), isTrue, reason: 'Mind map file should be created');
     });
 
@@ -215,6 +219,117 @@ void main() {
       expect(maps.any((m) => m.id == 'list-1'), isTrue);
       expect(maps.any((m) => m.id == 'list-2'), isTrue);
       expect(maps.any((m) => m.id == 'list-3'), isTrue);
+    });
+  });
+
+  group('StorageService Index Management (T075)', () {
+    test('should create index.json on first save with metadata only', () async {
+      // Arrange
+      final mindMap = _createTestMindMap('index-1', 'Indexed Map');
+
+      // Act
+      await storageService.saveMindMap(mindMap);
+
+      // Assert - index.json should exist
+      final indexFile = File('${testDir.path}/mind_maps/index.json');
+      expect(indexFile.existsSync(), isTrue);
+
+      // Metadata should contain only id, name, timestamps
+      final metadata = await storageService.listMindMapMetadata();
+      expect(metadata.length, greaterThanOrEqualTo(1));
+
+      final mapMeta = metadata.firstWhere((m) => m['id'] == 'index-1');
+      expect(mapMeta['name'], 'Indexed Map');
+      expect(mapMeta.keys, contains('createdAt'));
+      expect(mapMeta.keys, contains('lastModifiedAt'));
+
+      // Should NOT contain full node data
+      expect(mapMeta.keys, isNot(contains('nodes')));
+      expect(mapMeta.keys, isNot(contains('centralNode')));
+      expect(mapMeta.keys, isNot(contains('crossLinks')));
+    });
+
+    test('should update index.json when mind map is saved', () async {
+      // Arrange
+      final map1 = _createTestMindMap('update-1', 'Original Name');
+      await storageService.saveMindMap(map1);
+
+      // Act - save with updated name
+      final map2 = map1.copyWith(name: 'Updated Name', lastModifiedAt: DateTime.now());
+      await storageService.saveMindMap(map2);
+
+      // Assert
+      final metadata = await storageService.listMindMapMetadata();
+      final mapMeta = metadata.firstWhere((m) => m['id'] == 'update-1');
+
+      expect(mapMeta['name'], 'Updated Name');
+    });
+
+    test('should remove entry from index.json when mind map is deleted', () async {
+      // Arrange
+      final map1 = _createTestMindMap('delete-idx-1', 'Will Delete');
+      final map2 = _createTestMindMap('delete-idx-2', 'Will Keep');
+      await storageService.saveMindMap(map1);
+      await storageService.saveMindMap(map2);
+
+      // Act
+      await storageService.deleteMindMap('delete-idx-1');
+
+      // Assert
+      final metadata = await storageService.listMindMapMetadata();
+      expect(metadata.any((m) => m['id'] == 'delete-idx-1'), isFalse);
+      expect(metadata.any((m) => m['id'] == 'delete-idx-2'), isTrue);
+    });
+
+    test('should load metadata faster than full mind maps', () async {
+      // Arrange - save multiple maps
+      for (int i = 0; i < 5; i++) {
+        final map = _createTestMindMap('perf-$i', 'Map $i');
+        await storageService.saveMindMap(map);
+      }
+
+      // Act & Assert
+      final stopwatch = Stopwatch()..start();
+      final metadata = await storageService.listMindMapMetadata();
+      stopwatch.stop();
+      final metadataTime = stopwatch.elapsedMilliseconds;
+
+      stopwatch.reset();
+      stopwatch.start();
+      final fullMaps = await storageService.listMindMaps();
+      stopwatch.stop();
+      final fullTime = stopwatch.elapsedMilliseconds;
+
+      expect(metadata.length, fullMaps.length);
+      // Metadata loading should be faster (or at least not significantly slower)
+      expect(metadataTime, lessThanOrEqualTo(fullTime + 50));
+    });
+
+    test('should sort metadata by lastModifiedAt descending', () async {
+      // Arrange
+      final now = DateTime.now();
+      final old = _createTestMindMap('sort-old', 'Old').copyWith(
+        lastModifiedAt: now.subtract(const Duration(hours: 2)),
+      );
+      final middle = _createTestMindMap('sort-mid', 'Middle').copyWith(
+        lastModifiedAt: now.subtract(const Duration(hours: 1)),
+      );
+      final recent = _createTestMindMap('sort-new', 'Recent').copyWith(
+        lastModifiedAt: now,
+      );
+
+      await storageService.saveMindMap(old);
+      await storageService.saveMindMap(middle);
+      await storageService.saveMindMap(recent);
+
+      // Act
+      final metadata = await storageService.listMindMapMetadata();
+
+      // Assert - newest first
+      final ourMaps = metadata.where((m) => m['id'].toString().startsWith('sort-')).toList();
+      expect(ourMaps[0]['name'], 'Recent');
+      expect(ourMaps[1]['name'], 'Middle');
+      expect(ourMaps[2]['name'], 'Old');
     });
   });
 }

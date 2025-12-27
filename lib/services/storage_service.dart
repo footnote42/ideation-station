@@ -42,6 +42,9 @@ class StorageService {
 
       // Rename temp file to actual file (atomic operation)
       await tempFile.rename(file.path);
+
+      // Update index with metadata
+      await _updateIndex(mindMap);
     } catch (e) {
       // Clean up temp file if it exists
       if (tempFile.existsSync()) {
@@ -84,6 +87,9 @@ class StorageService {
       if (file.existsSync()) {
         await file.delete();
       }
+
+      // Remove from index
+      await _removeFromIndex(id);
     } catch (e) {
       // Silently fail if deletion doesn't work
       // (file might not exist or permissions issue)
@@ -104,7 +110,7 @@ class StorageService {
       final files = dir
           .listSync()
           .whereType<File>()
-          .where((f) => f.path.endsWith('.json') && !f.path.endsWith('.tmp'))
+          .where((f) => f.path.endsWith('.json') && !f.path.endsWith('.tmp') && !f.path.endsWith('index.json'))
           .toList();
 
       final mindMaps = <MindMap>[];
@@ -127,6 +133,119 @@ class StorageService {
       return mindMaps;
     } catch (e) {
       return [];
+    }
+  }
+
+  /// List mind map metadata only (efficient for UI lists).
+  ///
+  /// Returns lightweight metadata (id, name, timestamps) from index.json.
+  /// Significantly faster than loading full mind maps for large collections.
+  Future<List<Map<String, dynamic>>> listMindMapMetadata() async {
+    try {
+      final dir = await _getMindMapsDirectory();
+      final indexFile = File('${dir.path}/index.json');
+
+      // Create index if it doesn't exist
+      if (!indexFile.existsSync()) {
+        await _rebuildIndex();
+      }
+
+      final indexContent = await indexFile.readAsString();
+      final indexData = jsonDecode(indexContent) as Map<String, dynamic>;
+      final maps = indexData['maps'] as List;
+
+      // Sort by lastModifiedAt descending (newest first)
+      final sortedMaps = maps.map((m) => m as Map<String, dynamic>).toList();
+      sortedMaps.sort((a, b) {
+        final aTime = DateTime.parse(a['lastModifiedAt'] as String);
+        final bTime = DateTime.parse(b['lastModifiedAt'] as String);
+        return bTime.compareTo(aTime);
+      });
+
+      return sortedMaps;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Update index.json with mind map metadata.
+  Future<void> _updateIndex(MindMap mindMap) async {
+    try {
+      final dir = await _getMindMapsDirectory();
+      final indexFile = File('${dir.path}/index.json');
+
+      Map<String, dynamic> indexData;
+
+      if (indexFile.existsSync()) {
+        final content = await indexFile.readAsString();
+        indexData = jsonDecode(content) as Map<String, dynamic>;
+      } else {
+        indexData = {'maps': []};
+      }
+
+      final maps = indexData['maps'] as List;
+
+      // Remove existing entry with same ID
+      maps.removeWhere((m) => (m as Map)['id'] == mindMap.id);
+
+      // Add new metadata entry
+      maps.add({
+        'id': mindMap.id,
+        'name': mindMap.name,
+        'createdAt': mindMap.createdAt.toIso8601String(),
+        'lastModifiedAt': mindMap.lastModifiedAt.toIso8601String(),
+      });
+
+      // Write updated index
+      final jsonString = const JsonEncoder.withIndent('  ').convert(indexData);
+      await indexFile.writeAsString(jsonString);
+    } catch (e) {
+      // Silently fail - index is optimization, not critical
+    }
+  }
+
+  /// Remove entry from index.json.
+  Future<void> _removeFromIndex(String id) async {
+    try {
+      final dir = await _getMindMapsDirectory();
+      final indexFile = File('${dir.path}/index.json');
+
+      if (!indexFile.existsSync()) {
+        return;
+      }
+
+      final content = await indexFile.readAsString();
+      final indexData = jsonDecode(content) as Map<String, dynamic>;
+      final maps = indexData['maps'] as List;
+
+      maps.removeWhere((m) => (m as Map)['id'] == id);
+
+      final jsonString = const JsonEncoder.withIndent('  ').convert(indexData);
+      await indexFile.writeAsString(jsonString);
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  /// Rebuild index.json by scanning all saved mind maps.
+  Future<void> _rebuildIndex() async {
+    try {
+      final mindMaps = await listMindMaps();
+      final dir = await _getMindMapsDirectory();
+      final indexFile = File('${dir.path}/index.json');
+
+      final maps = mindMaps.map((m) => {
+        'id': m.id,
+        'name': m.name,
+        'createdAt': m.createdAt.toIso8601String(),
+        'lastModifiedAt': m.lastModifiedAt.toIso8601String(),
+      }).toList();
+
+      final indexData = {'maps': maps};
+      final jsonString = const JsonEncoder.withIndent('  ').convert(indexData);
+      await indexFile.writeAsString(jsonString);
+    } catch (e) {
+      // Silently fail
     }
   }
 }
