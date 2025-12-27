@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ideation_station/models/node_symbol.dart';
 import 'package:ideation_station/providers/canvas_view_provider.dart';
 import 'package:ideation_station/providers/mind_map_provider.dart';
+import 'package:ideation_station/services/storage_service.dart';
 import 'package:ideation_station/ui/widgets/canvas_widget.dart';
 import 'package:ideation_station/ui/widgets/symbol_palette.dart';
 
@@ -28,18 +28,47 @@ class CanvasScreen extends ConsumerStatefulWidget {
 class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String? _selectedNodeId;
   final TextEditingController _textController = TextEditingController();
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
 
-    // Create a new mind map if none exists
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mindMap = ref.read(mindMapProvider);
-      if (mindMap == null) {
-        _showCreateMindMapDialog();
+    // Load existing mind map or create new one
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.mindMapId != null) {
+        // Load existing mind map (T087)
+        await _loadMindMap(widget.mindMapId!);
+      } else {
+        // Create new mind map
+        final mindMap = ref.read(mindMapProvider);
+        if (mindMap == null) {
+          _showCreateMindMapDialog();
+        }
       }
     });
+  }
+
+  /// Load mind map from storage by ID
+  Future<void> _loadMindMap(String id) async {
+    try {
+      final mindMap = await _storageService.loadMindMap(id);
+      if (mindMap != null && mounted) {
+        ref.read(mindMapProvider.notifier).loadMindMap(mindMap);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load mind map')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading mind map: $e')),
+        );
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
@@ -91,6 +120,36 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
+  /// Handle creating a new mind map (T088).
+  ///
+  /// Auto-saves current map, clears state, and prompts for new map creation.
+  Future<void> _handleNewMap() async {
+    // Auto-save current map if it exists
+    final currentMap = ref.read(mindMapProvider);
+    if (currentMap != null) {
+      try {
+        await _storageService.saveMindMap(currentMap);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error saving current map: $e')),
+          );
+          return;
+        }
+      }
+    }
+
+    // Clear state
+    ref.read(mindMapProvider.notifier).clearMindMap();
+    ref.read(canvasViewProvider.notifier).clearSelection();
+    ref.read(canvasViewProvider.notifier).cancelLinkCreation();
+
+    // Prompt for new map creation
+    if (mounted) {
+      _showCreateMindMapDialog();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mindMap = ref.watch(mindMapProvider);
@@ -115,6 +174,25 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             icon: const Icon(Icons.add),
             onPressed: _showAddNodeDialog,
             tooltip: 'Add Node',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'new_map') {
+                _handleNewMap();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'new_map',
+                child: Row(
+                  children: [
+                    Icon(Icons.add_circle_outline),
+                    SizedBox(width: 8),
+                    Text('New Map'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -204,12 +282,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
       // Defer state change until dialog animation completes
       // Controllers will be garbage collected automatically (they're local variables)
-      Future.delayed(const Duration(milliseconds: 350), () {
+      Future.delayed(const Duration(milliseconds: 350), () async {
         if (mounted) {
           ref.read(mindMapProvider.notifier).createMindMap(
                 name: mapName,
                 centralText: centralText,
               );
+
+          // Save to storage after creation (T083)
+          final mindMap = ref.read(mindMapProvider);
+          if (mindMap != null) {
+            await _storageService.saveMindMap(mindMap);
+          }
         }
       });
     }

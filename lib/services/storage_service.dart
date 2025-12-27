@@ -57,6 +57,7 @@ class StorageService {
   /// Load a mind map from local storage by ID
   ///
   /// Returns null if the mind map doesn't exist or cannot be loaded.
+  /// Validates JSON schema and data integrity (T089).
   Future<MindMap?> loadMindMap(String id) async {
     try {
       final dir = await _getMindMapsDirectory();
@@ -67,24 +68,96 @@ class StorageService {
       }
 
       final jsonString = await file.readAsString();
-      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      // Validate JSON is parseable
+      final jsonData = jsonDecode(jsonString);
+      if (jsonData is! Map<String, dynamic>) {
+        throw FormatException('Invalid JSON structure: expected object, got ${jsonData.runtimeType}');
+      }
+
+      // Validate required top-level fields (T089)
+      _validateMindMapSchema(jsonData);
 
       return MindMap.fromJson(jsonData);
+    } on FormatException catch (e) {
+      // JSON parsing or validation error
+      throw Exception('File corrupted: ${e.message}');
     } catch (e) {
-      // If JSON parsing fails or file is corrupted, return null
-      return null;
+      // Other errors (file system, etc.)
+      throw Exception('Failed to load mind map: $e');
+    }
+  }
+
+  /// Validate mind map JSON schema (T089).
+  ///
+  /// Throws FormatException if schema is invalid.
+  void _validateMindMapSchema(Map<String, dynamic> json) {
+    // Check required fields
+    final requiredFields = ['id', 'name', 'createdAt', 'lastModifiedAt', 'centralNode', 'nodes'];
+    for (final field in requiredFields) {
+      if (!json.containsKey(field)) {
+        throw FormatException('Missing required field: $field');
+      }
+    }
+
+    // Validate centralNode is an object
+    if (json['centralNode'] is! Map) {
+      throw FormatException('Invalid centralNode: expected object');
+    }
+
+    final centralNode = json['centralNode'] as Map<String, dynamic>;
+
+    // Validate centralNode has required fields
+    if (!centralNode.containsKey('id') || !centralNode.containsKey('text')) {
+      throw FormatException('Central node missing required fields (id, text)');
+    }
+
+    // Validate nodes is a list
+    if (json['nodes'] is! List) {
+      throw FormatException('Invalid nodes: expected List');
+    }
+
+    // Validate crossLinks is a list (if present)
+    if (json.containsKey('crossLinks') && json['crossLinks'] is! List) {
+      throw FormatException('Invalid crossLinks: expected List');
+    }
+  }
+
+  /// Rename a mind map
+  ///
+  /// Updates the name in the mind map file and index.
+  Future<void> renameMindMap(String id, String newName) async {
+    try {
+      // Load existing mind map
+      final mindMap = await loadMindMap(id);
+      if (mindMap == null) return;
+
+      // Update name
+      final updated = mindMap.copyWith(
+        name: newName,
+        lastModifiedAt: DateTime.now(),
+      );
+
+      // Save updated mind map
+      await saveMindMap(updated);
+    } catch (e) {
+      // Silently fail
     }
   }
 
   /// Delete a mind map from local storage
   ///
-  /// Does nothing if the mind map doesn't exist.
+  /// Creates backup before deletion for safety (T086).
   Future<void> deleteMindMap(String id) async {
     try {
       final dir = await _getMindMapsDirectory();
       final file = File('${dir.path}/$id.json');
 
       if (file.existsSync()) {
+        // Create backup before deleting (T086)
+        await _createBackup(id);
+
+        // Delete the file
         await file.delete();
       }
 
@@ -93,6 +166,29 @@ class StorageService {
     } catch (e) {
       // Silently fail if deletion doesn't work
       // (file might not exist or permissions issue)
+    }
+  }
+
+  /// Create backup of mind map before deletion (T086)
+  Future<void> _createBackup(String id) async {
+    try {
+      final dir = await _getMindMapsDirectory();
+      final file = File('${dir.path}/$id.json');
+
+      if (!file.existsSync()) return;
+
+      // Create backups directory
+      final backupsDir = Directory('${dir.path}/backups');
+      if (!backupsDir.existsSync()) {
+        await backupsDir.create(recursive: true);
+      }
+
+      // Copy file to backups with timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final backupFile = File('${backupsDir.path}/$id-$timestamp.json');
+      await file.copy(backupFile.path);
+    } catch (e) {
+      // Silently fail - backup is best-effort
     }
   }
 

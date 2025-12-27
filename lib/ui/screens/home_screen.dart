@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ideation_station/providers/mind_map_list_provider.dart';
 import 'package:ideation_station/providers/mind_map_provider.dart';
+import 'package:ideation_station/services/storage_service.dart';
 import 'package:ideation_station/ui/screens/canvas_screen.dart';
 
 /// Home screen displaying list of saved mind maps.
@@ -19,6 +20,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final StorageService _storageService = StorageService();
+
   @override
   void initState() {
     super.initState();
@@ -192,8 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     if (result != null && result.isNotEmpty && mounted) {
-      // TODO: Implement rename in storage service
-      // For now, just refresh the list
+      await _storageService.renameMindMap(id, result);
       ref.read(mindMapListProvider.notifier).refresh();
     }
   }
@@ -219,9 +221,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     if (confirmed == true && mounted) {
-      // TODO: Implement delete in storage service
-      // For now, just remove from list
-      ref.read(mindMapListProvider.notifier).removeMap(id);
+      await _storageService.deleteMindMap(id);
+      ref.read(mindMapListProvider.notifier).refresh();
     }
   }
 

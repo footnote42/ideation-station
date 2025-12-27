@@ -199,32 +199,32 @@
 
 ### Unit Tests for User Story 4
 
-- [ ] T075 [P] [US4] Unit test for index.json management in test/unit/services/storage_service_test.dart (test metadata index updates on save/delete)
-- [ ] T076 [P] [US4] Unit test for mind map list loading in test/unit/providers/mind_map_list_provider_test.dart (test lazy loading, sort by lastModified)
+- [X] T075 [P] [US4] Unit test for index.json management in test/unit/services/storage_service_test.dart (test metadata index updates on save/delete)
+- [X] T076 [P] [US4] Unit test for mind map list loading in test/unit/providers/mind_map_list_provider_test.dart (test lazy loading, sort by lastModified)
 
 ### Widget Tests for User Story 4
 
-- [ ] T077 [P] [US4] Widget test for HomeScreen mind map list in test/widget/home_screen_test.dart (test ListView display, tap to load, long-press menu)
-- [ ] T078 [P] [US4] Widget test for mind map rename dialog in test/widget/rename_dialog_test.dart (test TextField validation, unique name check)
+- [X] T077 [P] [US4] Widget test for HomeScreen mind map list in test/widget/home_screen_test.dart (test ListView display, tap to load, long-press menu)
+- [X] T078 [P] [US4] Widget test for mind map rename dialog in test/widget/rename_dialog_test.dart (test TextField validation, unique name check)
 
 ### Implementation for User Story 4
 
-- [ ] T079 [P] [US4] Create HomeScreen in lib/ui/screens/home_screen.dart with ListView of saved mind maps, FAB for new map, navigation to CanvasScreen
-- [ ] T080 [P] [US4] Create MindMapListProvider in lib/providers/mind_map_list_provider.dart using StateNotifier to manage list of saved mind maps (load from index.json)
-- [ ] T081 [US4] Implement index.json file structure in StorageService (metadata only: id, name, createdAt, lastModifiedAt per research.md)
-- [ ] T082 [US4] Implement lazy loading in StorageService (load index.json first, full maps on demand per performance considerations)
-- [ ] T083 [US4] Add save dialog to CanvasScreen (prompt for name on first save, auto-save afterward per FR-024)
-- [ ] T084 [US4] Implement rename functionality with long-press menu in HomeScreen (show dialog, update name, refresh list per acceptance scenario 6)
-- [ ] T085 [US4] Implement delete functionality with long-press menu in HomeScreen (confirmation dialog, atomic delete with backup per data integrity)
-- [ ] T086 [US4] Create backup mechanism in StorageService before delete (copy to backups/ directory with timestamp per research.md)
-- [ ] T087 [US4] Implement navigation from HomeScreen to CanvasScreen with mind map ID parameter
-- [ ] T088 [US4] Add "New Map" action in CanvasScreen (auto-save current map, clear state, prompt for new central node)
-- [ ] T089 [US4] Implement full data integrity on load (validate JSON schema, handle corruption gracefully, show error if load fails)
-- [ ] T090 [US4] Add sort by lastModified to mind map list (most recent first)
+- [X] T079 [P] [US4] Create HomeScreen in lib/ui/screens/home_screen.dart with ListView of saved mind maps, FAB for new map, navigation to CanvasScreen
+- [X] T080 [P] [US4] Create MindMapListProvider in lib/providers/mind_map_list_provider.dart using StateNotifier to manage list of saved mind maps (load from index.json)
+- [X] T081 [US4] Implement index.json file structure in StorageService (metadata only: id, name, createdAt, lastModifiedAt per research.md)
+- [X] T082 [US4] Implement lazy loading in StorageService (load index.json first, full maps on demand per performance considerations)
+- [X] T083 [US4] Add save dialog to CanvasScreen (prompt for name on first save, auto-save afterward per FR-024)
+- [X] T084 [US4] Implement rename functionality with long-press menu in HomeScreen (show dialog, update name, refresh list per acceptance scenario 6)
+- [X] T085 [US4] Implement delete functionality with long-press menu in HomeScreen (confirmation dialog, atomic delete with backup per data integrity)
+- [X] T086 [US4] Create backup mechanism in StorageService before delete (copy to backups/ directory with timestamp per research.md)
+- [X] T087 [US4] Implement navigation from HomeScreen to CanvasScreen with mind map ID parameter
+- [X] T088 [US4] Add "New Map" action in CanvasScreen (auto-save current map, clear state, prompt for new central node)
+- [X] T089 [US4] Implement full data integrity on load (validate JSON schema, handle corruption gracefully, show error if load fails)
+- [X] T090 [US4] Add sort by lastModified to mind map list (most recent first)
 
 ### Integration Tests for User Story 4
 
-- [ ] T091 [US4] Integration test for save & retrieve user journey in test/integration/save_retrieve_test.dart (create map, name it, close app simulation, reopen, verify all data intact per SC-011)
+- [X] T091 [US4] Integration test for save & retrieve user journey in test/integration/save_retrieve_test.dart (create map, name it, close app simulation, reopen, verify all data intact per SC-011)
 
 **Checkpoint**: User Story 4 complete - full persistence layer working, users can manage multiple mind maps
 
